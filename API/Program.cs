@@ -1,5 +1,6 @@
 using API;
 using API.Configs;
+using API.Middlewares;
 using API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -125,6 +126,7 @@ internal class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
+        app.UseTokenValidator();
         app.MapControllers();
 
         app.Run();
