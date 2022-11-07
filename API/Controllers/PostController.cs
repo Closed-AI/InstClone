@@ -93,8 +93,6 @@ namespace API.Controllers
         [HttpGet]
         public async Task<PostModel> GetPost(Guid id)
         {
-            // аттачи поста можно получить с помощью метода
-            // AttachController  GetAttach  и  GetAttachById
             var post = await _postService.GetPostById(id);
 
             if (post == null)
