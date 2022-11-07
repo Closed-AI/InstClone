@@ -93,35 +93,14 @@ namespace API.Controllers
         [HttpGet]
         public async Task<PostModel> GetPost(Guid id)
         {
+            // аттачи поста можно получить с помощью метода
+            // AttachController  GetAttach  и  GetAttachById
             var post = await _postService.GetPostById(id);
 
             if (post == null)
                 throw new Exception("post not found");
-
-            var content = new List<AttachModel>();
-
-            if (post.PostContent != null)
-            {
-                foreach (var el in post.PostContent)
-                {
-                    if (el != null)
-                        content.Add(_mapper.Map<AttachModel>(el));
-                }
-            }
-
-            var model = new PostModel
-            {
-                Id = post.Id,
-                Description = post.Description,
-                CreatingDate = post.CreatingDate,
-                Content = content
-            };
-
-            return model;
-
-            // чёртов мапер мог заменить строки 80 - 97
-            // строка ниже не может смапить  Post.PostContent в PostModel.AttachModel
-            //return _mapper.Map<PostModel>(posts);
+            
+            return _mapper.Map<PostModel>(post);
         }
 
         [HttpGet]
@@ -140,10 +119,6 @@ namespace API.Controllers
             }
 
             return postModels;
-
-            // чёртов мапер мог заменить строки 80 - 97
-            // строка ниже не может смапить  Post.ICollection<PostContent> в PostModel.List<AttachModel>
-            //return _mapper.Map<List<PostModel>>(posts);
         }
     }
 }

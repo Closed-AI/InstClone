@@ -13,7 +13,9 @@ namespace API
                 .ForMember(d => d.BirthDate, m => m.MapFrom(s => s.BirthDate.UtcDateTime))
                 ;
             CreateMap<DAL.Entities.User, Models.UserModel>();
-            CreateMap<DAL.Entities.Post, Models.PostModel>();
+            CreateMap<DAL.Entities.Post, Models.PostModel>()
+                .ForMember(d => d.Content, m => m.MapFrom(e => e.PostContent))
+                ;
             CreateMap<DAL.Entities.Comment, Models.CommentModel>();
             CreateMap<DAL.Entities.Avatar, Models.AttachModel>();
             CreateMap<DAL.Entities.PostContent, Models.AttachModel>();
