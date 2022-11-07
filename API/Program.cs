@@ -67,6 +67,8 @@ internal class Program
         builder.Services.AddAutoMapper(typeof(MapperProfile).Assembly);
         // add our user service
         builder.Services.AddScoped<UserService>();
+        builder.Services.AddScoped<PostService>();
+        builder.Services.AddScoped<AttachService>();
 
         builder.Services.AddAuthentication(o =>
         {

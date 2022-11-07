@@ -2,6 +2,6 @@
 {
     public class Avatar : Attach
     {
-        public virtual User User { get; set; }
+        public virtual User User { get; set; } = null!;
     }
 }

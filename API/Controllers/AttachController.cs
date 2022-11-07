@@ -1,5 +1,6 @@
 ﻿using API.Models;
 using API.Services;
+using DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +10,13 @@ namespace Api.Controllers
     [ApiController]
     public class AttachController : ControllerBase
     {
+        private readonly AttachService _attachService;
+
+        public AttachController(AttachService attachService)
+        {
+            _attachService = attachService;
+        }
+
         [HttpPost]
         [Authorize]
         public async Task<List<MetadataModel>> UploadFiles([FromForm] List<IFormFile> files)
@@ -57,6 +65,23 @@ namespace Api.Controllers
 
                 return meta;
             }
+        }
+
+        [HttpPost]
+        public FileResult GetAttach(AttachModel model)
+        {
+            return File(System.IO.File.ReadAllBytes(model.FilePath), model.MimeType);
+        }
+
+        [HttpGet]
+        public async Task<FileResult> GetAttachById(long id)
+        {
+            var attach = await _attachService.GetAttachById(id);
+            
+            if (attach == null)
+                throw new Exception("user has no avatar");
+            
+            return File(System.IO.File.ReadAllBytes(attach.FilePath), attach.MimeType);
         }
     }
 }

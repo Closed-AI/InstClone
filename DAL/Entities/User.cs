@@ -10,6 +10,8 @@
         public long? AvatarID { get; set; }
 
         public virtual Avatar? Avatar { get; set; } = null;
+        public virtual ICollection<Post>? Posts { get; set; }
+        public virtual ICollection<Comment>? Comments { get; set; }
         public virtual ICollection<UserSession>? Sessions { get; set; }
     }
 }

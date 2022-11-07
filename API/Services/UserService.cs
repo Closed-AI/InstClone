@@ -54,7 +54,7 @@ namespace API.Services
             => await _dataContext.Users.AsNoTracking()
             .ProjectTo<UserModel>(_mapper.ConfigurationProvider).ToListAsync();
 
-        private async Task<DAL.Entities.User> GetUserById(Guid id)
+        public async Task<DAL.Entities.User> GetUserById(Guid id)
         {
             var user = await _dataContext.Users.Include(e => e.Avatar).FirstOrDefaultAsync(x => x.Id == id);
 
