@@ -1,9 +1,7 @@
 ﻿using API.Models;
 using API.Services;
 using AutoMapper;
-using DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -93,14 +91,22 @@ namespace API.Controllers
         [HttpGet]
         public async Task<PostModel> GetPost(Guid id)
         {
-            // аттачи поста можно получить с помощью метода
-            // AttachController  GetAttach  и  GetAttachById
             var post = await _postService.GetPostById(id);
 
             if (post == null)
                 throw new Exception("post not found");
             
-            return _mapper.Map<PostModel>(post);
+            var res = _mapper.Map<PostModel>(post);
+
+            res.ContentLinks = new List<string>();
+
+            if (post.PostContent != null)
+                foreach (var item in post.PostContent)
+                {
+                    res.ContentLinks.Add($"/api/Attach/GetAttachById?id={item.Id}");
+                }
+
+            return res;
         }
 
         [HttpGet]

@@ -52,7 +52,7 @@ namespace API.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("Attaches");
+                    b.ToTable("Attaches", (string)null);
 
                     b.UseTptMappingStrategy();
                 });
@@ -82,7 +82,7 @@ namespace API.Migrations
 
                     b.HasIndex("PostId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Post", b =>
@@ -104,7 +104,7 @@ namespace API.Migrations
 
                     b.HasIndex("CreatorId");
 
-                    b.ToTable("Posts");
+                    b.ToTable("Posts", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.User", b =>
@@ -139,7 +139,7 @@ namespace API.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.UserSession", b =>
@@ -164,7 +164,7 @@ namespace API.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSessions");
+                    b.ToTable("UserSessions", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Avatar", b =>
@@ -183,7 +183,7 @@ namespace API.Migrations
 
                     b.HasIndex("PostId");
 
-                    b.ToTable("PostContents");
+                    b.ToTable("PostContents", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Attach", b =>
