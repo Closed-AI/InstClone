@@ -74,7 +74,7 @@ namespace Api.Controllers
         }
 
         [HttpGet]
-        public async Task<FileResult> GetAttachById(long id)
+        public async Task<FileResult> GetAttachById(Guid id)
         {
             var attach = await _attachService.GetAttachById(id);
             

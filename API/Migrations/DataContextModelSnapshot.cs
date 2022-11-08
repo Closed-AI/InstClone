@@ -24,11 +24,9 @@ namespace API.Migrations
 
             modelBuilder.Entity("DAL.Entities.Attach", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("AuthorId")
                         .HasColumnType("uuid");
@@ -52,7 +50,7 @@ namespace API.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("Attaches", (string)null);
+                    b.ToTable("Attaches");
 
                     b.UseTptMappingStrategy();
                 });
@@ -82,7 +80,7 @@ namespace API.Migrations
 
                     b.HasIndex("PostId");
 
-                    b.ToTable("Comments", (string)null);
+                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("DAL.Entities.Post", b =>
@@ -104,7 +102,7 @@ namespace API.Migrations
 
                     b.HasIndex("CreatorId");
 
-                    b.ToTable("Posts", (string)null);
+                    b.ToTable("Posts");
                 });
 
             modelBuilder.Entity("DAL.Entities.User", b =>
@@ -113,8 +111,8 @@ namespace API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<long?>("AvatarID")
-                        .HasColumnType("bigint");
+                    b.Property<Guid?>("AvatarID")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("BirthDate")
                         .HasColumnType("timestamp with time zone");
@@ -139,7 +137,7 @@ namespace API.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("DAL.Entities.UserSession", b =>
@@ -164,7 +162,7 @@ namespace API.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSessions", (string)null);
+                    b.ToTable("UserSessions");
                 });
 
             modelBuilder.Entity("DAL.Entities.Avatar", b =>
@@ -183,7 +181,7 @@ namespace API.Migrations
 
                     b.HasIndex("PostId");
 
-                    b.ToTable("PostContents", (string)null);
+                    b.ToTable("PostContents");
                 });
 
             modelBuilder.Entity("DAL.Entities.Attach", b =>

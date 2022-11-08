@@ -16,7 +16,7 @@ namespace API.Services
             _mapper = mapper;
         }
 
-        public async Task<AttachModel> GetAttachById(long id)
+        public async Task<AttachModel> GetAttachById(Guid id)
         {
             var res = await _dataContext
                 .Attaches

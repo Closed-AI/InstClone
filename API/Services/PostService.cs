@@ -40,6 +40,7 @@ namespace API.Services
             {
                 var postContent = new PostContent
                 {
+                    Id = Guid.NewGuid(),
                     PostId = post.Id,
                     Author = user,
                     MimeType = meta.MimeType,
