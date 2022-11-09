@@ -1,6 +1,8 @@
-﻿using API.Models;
+﻿using Api.Controllers;
+using API.Models;
 using API.Services;
 using AutoMapper;
+using Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,47 +23,13 @@ namespace API.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task CreatePost(string? description)
+        public async Task CreatePost(CreatePostModel model)
         {
             var userIdString = User.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
 
             if (Guid.TryParse(userIdString, out var userId))
             {
-                await _postService.CreatePost(userId, description);
-            }
-            else
-                throw new Exception("you are not authorized");
-        }
-
-        [HttpPost]
-        [Authorize]
-        public async Task AddContentToPost(AddContentRequestModel model)
-        {
-            var userIdString = User.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
-
-            if (Guid.TryParse(userIdString, out var userId))
-            {
-                var post = await _postService.GetPostById(model.PostId);
-
-                if (post.CreatorId != userId)
-                    throw new Exception("you can not edit not your post");
-
-                var tempFi = new FileInfo(Path.Combine(Path.GetTempPath(), model.Meta.TempId.ToString()));
-
-                if (!tempFi.Exists)
-                    throw new Exception("file not found");
-                else
-                {
-                    var path = Path.Combine(Directory.GetCurrentDirectory(), "attaches", model.Meta.TempId.ToString());
-                    var destFi = new FileInfo(path);
-
-                    if (destFi.Directory != null && !destFi.Directory.Exists)
-                        destFi.Directory.Create();
-
-                    System.IO.File.Copy(tempFi.FullName, path, true);
-
-                    await _postService.AddContentToPost(post.Id, userId, model.Meta, path);
-                }
+                await _postService.CreatePost(userId, model);
             }
             else
                 throw new Exception("you are not authorized");
@@ -98,21 +66,37 @@ namespace API.Controllers
             
             var res = _mapper.Map<PostModel>(post);
 
-            res.ContentLinks = new List<string>();
+            res.Contents = new List<AttachWithLinkModel>();
 
             if (post.PostContent != null)
                 foreach (var item in post.PostContent)
                 {
-                    res.ContentLinks.Add($"/api/Attach/GetAttachById?id={item.Id}");
+                    var link = Url.Action(
+                        nameof(AttachController.GetAttach),
+                        nameof(AttachController).CutController(),
+                        new { id = item.Id }
+                        );
+
+                    if (link != null)
+                    {
+                        var model = new AttachWithLinkModel
+                        {
+                            Name = item.Name,
+                            MimeType = item.MimeType,
+                            Link = link
+                        };
+
+                        res.Contents.Add(model);
+                    }
                 }
 
             return res;
         }
 
         [HttpGet]
-        public async Task<List<PostModel>> GetPosts()
+        public async Task<List<PostModel>> GetPosts(int skip = 0, int take = 10)
         {
-            var posts = await _postService.GetPosts();
+            var posts = await _postService.GetPosts(skip, take);
 
             if (posts == null)
                 return new List<PostModel>();

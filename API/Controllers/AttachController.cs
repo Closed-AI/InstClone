@@ -67,19 +67,13 @@ namespace Api.Controllers
             }
         }
 
-        [HttpPost]
-        public FileResult GetAttach(AttachModel model)
-        {
-            return File(System.IO.File.ReadAllBytes(model.FilePath), model.MimeType);
-        }
-
         [HttpGet]
-        public async Task<FileResult> GetAttachById(Guid id)
+        public async Task<FileResult> GetAttach(Guid id)
         {
-            var attach = await _attachService.GetAttachById(id);
+            var attach = await _attachService.GetAttach(id);
             
             if (attach == null)
-                throw new Exception("user has no avatar");
+                throw new Exception("attach not found");
             
             return File(System.IO.File.ReadAllBytes(attach.FilePath), attach.MimeType);
         }

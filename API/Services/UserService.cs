@@ -207,7 +207,6 @@ namespace API.Services
             {
                 var avatar = new Avatar
                 {
-                    Id = Guid.NewGuid(),
                     Author = user,
                     MimeType = meta.MimeType,
                     FilePath = filePath,

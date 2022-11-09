@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20221108105705_fixAttachesIdToGuid")]
-    partial class fixAttachesIdToGuid
+    [Migration("20221109055018_addAuthorIdToAttach")]
+    partial class addAuthorIdToAttach
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -114,9 +114,6 @@ namespace API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("AvatarID")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTimeOffset>("BirthDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -133,9 +130,6 @@ namespace API.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AvatarID")
-                        .IsUnique();
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -171,6 +165,12 @@ namespace API.Migrations
             modelBuilder.Entity("DAL.Entities.Avatar", b =>
                 {
                     b.HasBaseType("DAL.Entities.Attach");
+
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uuid");
+
+                    b.HasIndex("UserID")
+                        .IsUnique();
 
                     b.ToTable("Avatars", (string)null);
                 });
@@ -228,15 +228,6 @@ namespace API.Migrations
                     b.Navigation("Creator");
                 });
 
-            modelBuilder.Entity("DAL.Entities.User", b =>
-                {
-                    b.HasOne("DAL.Entities.Avatar", "Avatar")
-                        .WithOne("User")
-                        .HasForeignKey("DAL.Entities.User", "AvatarID");
-
-                    b.Navigation("Avatar");
-                });
-
             modelBuilder.Entity("DAL.Entities.UserSession", b =>
                 {
                     b.HasOne("DAL.Entities.User", "User")
@@ -255,6 +246,14 @@ namespace API.Migrations
                         .HasForeignKey("DAL.Entities.Avatar", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("DAL.Entities.User", "User")
+                        .WithOne("Avatar")
+                        .HasForeignKey("DAL.Entities.Avatar", "UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DAL.Entities.PostContent", b =>
@@ -283,17 +282,13 @@ namespace API.Migrations
 
             modelBuilder.Entity("DAL.Entities.User", b =>
                 {
+                    b.Navigation("Avatar");
+
                     b.Navigation("Comments");
 
                     b.Navigation("Posts");
 
                     b.Navigation("Sessions");
-                });
-
-            modelBuilder.Entity("DAL.Entities.Avatar", b =>
-                {
-                    b.Navigation("User")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

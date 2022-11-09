@@ -7,7 +7,6 @@
         public string Email { get; set; } = "empty";
         public string PasswordHash { get; set; }  = "empty";
         public DateTimeOffset BirthDate { get; set; }
-        public Guid? AvatarID { get; set; }
 
         public virtual Avatar? Avatar { get; set; } = null;
         public virtual ICollection<Post>? Posts { get; set; }

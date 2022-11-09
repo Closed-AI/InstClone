@@ -17,36 +17,52 @@ namespace API.Services
             _userService = userService;
         }
 
-        public async Task CreatePost(Guid creatorId, string? description)
+        public async Task CreatePost(Guid creatorId,CreatePostModel model)
         {
             var post = new Post
             {
                 Id = Guid.NewGuid(),
-                Description = description,
+                Description = model.Description,
                 CreatingDate = DateTime.UtcNow,
                 CreatorId = creatorId
             };
-
             await _dataContext.Posts.AddAsync(post);
             await _dataContext.SaveChangesAsync();
+
+            if (model.Contents != null)
+                foreach (var el in model.Contents)
+                {
+                    await AddContentToPost(post, el);
+                }
         }
 
-        public async Task AddContentToPost(Guid postId, Guid userID, MetadataModel meta, string filePath)
+        private async Task AddContentToPost(Post post, MetadataModel model)
         {
-            var post = await GetPostById(postId);
-            var user = await _userService.GetUserById(userID);
+            var tempFi = new FileInfo(Path.Combine(Path.GetTempPath(), model.TempId.ToString()));
 
-            if (post != null && user != null)
+            if (!tempFi.Exists)
+                throw new Exception("file not found");
+            else
             {
+                var path = Path.Combine(Directory.GetCurrentDirectory(), "attaches", model.TempId.ToString());
+                var destFi = new FileInfo(path);
+
+                if (destFi.Directory != null && !destFi.Directory.Exists)
+                    destFi.Directory.Create();
+
+                System.IO.File.Copy(tempFi.FullName, path, true);
+
+                var user = await _userService.GetUserById(post.CreatorId);
+
                 var postContent = new PostContent
                 {
-                    Id = Guid.NewGuid(),
                     PostId = post.Id,
+                    Post = post,
                     Author = user,
-                    MimeType = meta.MimeType,
-                    FilePath = filePath,
-                    Name = meta.Name,
-                    Size = meta.Size
+                    MimeType = model.MimeType,
+                    FilePath = path,
+                    Name = model.Name,
+                    Size = model.Size
                 };
 
                 if (post.PostContent == null)
@@ -89,9 +105,14 @@ namespace API.Services
             return post;
         }
 
-        public async Task<List<Post>> GetPosts()
+        public async Task<List<Post>> GetPosts(int skip, int take)
         {
-            return await _dataContext.Posts.Include(e => e.PostContent).ToListAsync();
+            return await _dataContext
+                .Posts
+                .Include(e => e.PostContent)
+                .Take(take)
+                .Skip(skip)
+                .ToListAsync();
         }
     }
 }

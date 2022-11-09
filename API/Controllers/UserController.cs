@@ -20,7 +20,7 @@ namespace API.Controllers
         public async Task CreateUser(CreateUserModel model)
         {
             if (await _userService.CheckUserExist(model.Email))
-                throw new Exception("user is exist");
+                throw new Exception("user wtih cirrent email exist");
             await _userService.CreateUser(model);
         }
 

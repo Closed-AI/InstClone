@@ -6,17 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace API.Migrations
 {
     /// <inheritdoc />
-    public partial class fixAttachesIdToGuid : Migration
+    public partial class replaceIdFromUserToAvatar : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<Guid>(
-                name: "AvatarID",
-                table: "Users",
-                type: "uuid",
-                nullable: true);
-
             migrationBuilder.CreateTable(
                 name: "Attaches",
                 columns: table => new
@@ -84,7 +78,8 @@ namespace API.Migrations
                 name: "Avatars",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserID = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -93,6 +88,12 @@ namespace API.Migrations
                         name: "FK_Avatars_Attaches_Id",
                         column: x => x.Id,
                         principalTable: "Attaches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Avatars_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -149,12 +150,6 @@ namespace API.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_AvatarID",
-                table: "Users",
-                column: "AvatarID",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
@@ -164,6 +159,12 @@ namespace API.Migrations
                 name: "IX_Attaches_AuthorId",
                 table: "Attaches",
                 column: "AuthorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Avatars_UserID",
+                table: "Avatars",
+                column: "UserID",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Comments_AuthorId",
@@ -189,22 +190,11 @@ namespace API.Migrations
                 name: "IX_UserSessions_UserId",
                 table: "UserSessions",
                 column: "UserId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Users_Avatars_AvatarID",
-                table: "Users",
-                column: "AvatarID",
-                principalTable: "Avatars",
-                principalColumn: "Id");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Users_Avatars_AvatarID",
-                table: "Users");
-
             migrationBuilder.DropTable(
                 name: "Avatars");
 
@@ -224,15 +214,7 @@ namespace API.Migrations
                 name: "Posts");
 
             migrationBuilder.DropIndex(
-                name: "IX_Users_AvatarID",
-                table: "Users");
-
-            migrationBuilder.DropIndex(
                 name: "IX_Users_Email",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "AvatarID",
                 table: "Users");
         }
     }
