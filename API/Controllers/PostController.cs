@@ -55,6 +55,24 @@ namespace API.Controllers
 
         [HttpPost]
         [Authorize]
+        public async Task LikePost(Guid postId)
+        {
+            // лайк и отмена лайка производятся вызовом одного метода,
+            // если пользователь ещё не лайкнул данный пост - поставится лайк,
+            // если лайкнул - лайк пропадёт
+
+            var userIdString = User.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
+
+            if (Guid.TryParse(userIdString, out var userId))
+            {
+                await _postService.LikePost(postId, userId);
+            }
+            else
+                throw new Exception("you are not authorized");
+        }
+
+        [HttpPost]
+        [Authorize]
         public async Task WriteComment(CreateCommentRequest request)
         {
             var userIdString = User.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
@@ -70,13 +88,28 @@ namespace API.Controllers
                 throw new Exception("you are not authorized");
         }
 
-        [HttpGet]
-        public async Task<List<CommentModel>> ShowPostComments(Guid postId)
+        [HttpPost]
+        [Authorize]
+        public async Task LikeComment(Guid commentId)
         {
-            var post = await _postService.GetPostById(postId);
-            return _mapper.Map<List<CommentModel>>(post.Comments);
+            // лайк и отмена лайка производятся вызовом одного метода,
+            // если пользователь ещё не лайкнул данный пост - поставится лайк,
+            // если лайкнул - лайк пропадёт
+
+            var userIdString = User.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
+
+            if (Guid.TryParse(userIdString, out var userId))
+            {
+                await _postService.LikeComment(commentId, userId);
+            }
+            else
+                throw new Exception("you are not authorized");
         }
 
+        [HttpGet]
+        public async Task<List<CommentModel>> ShowPostComments(Guid postId)
+            => await _postService.ShowPostComments(postId);
+        
         [HttpGet]
         public async Task<PostModel> GetPostById(Guid id)
             => await _postService.GetPostById(id);

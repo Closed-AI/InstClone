@@ -75,5 +75,28 @@ namespace API.Controllers
             else
                 throw new Exception("you are not authorized");
         }
+
+
+
+        [HttpPost]
+        [Authorize]
+        public async Task Subscribe(Guid targetId)
+        {
+            // если не подписан - подписывается
+            // если подписан - отписывается
+            var idString = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+
+            if (Guid.TryParse(idString, out Guid userId))
+            {
+                await _userService.Subscribe(targetId, userId);
+            }
+            else
+                throw new Exception("you are not authorized");
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<List<UserWithAvatarModel>> GetSubscribsions(Guid userId)
+            => await _userService.GetSubscribsions(userId);
     }
 }

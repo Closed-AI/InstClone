@@ -4,6 +4,8 @@ using AutoMapper;
 using Common;
 using DAL;
 using DAL.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -58,7 +60,10 @@ namespace API.Services
 
         public async Task<User> GetUserById(Guid id)
         {
-            var user = await _dataContext.Users.Include(e => e.Avatar).FirstOrDefaultAsync(x => x.Id == id);
+            var user = await _dataContext.Users
+                .Include(x => x.Avatar)
+                .Include(x => x.Posts)
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (user == null)
                 throw new Exception("user not found");
@@ -226,6 +231,52 @@ namespace API.Services
             var user = await GetUserById(userId);
             var atach = _mapper.Map<AttachModel>(user.Avatar);
             return atach;
+        }
+
+        public async Task Subscribe(Guid targetId, Guid subId)
+        {
+            var targetUser = await _dataContext.Users.FirstOrDefaultAsync(x => x.Id == targetId);
+
+            if (targetUser == default)
+                throw new Exception("targetUser not found");
+
+            var sub = await _dataContext.Subs.FirstOrDefaultAsync(x 
+                => x.TargetId == targetId && x.SubscriberId == subId);
+
+            if (sub!=default)
+                _dataContext.Subs.Remove(sub);
+            else
+            {
+                sub = new Subscribe
+                {
+                    TargetId = targetId,
+                    SubscriberId = subId
+                };
+
+                await _dataContext.Subs.AddAsync(sub);
+            }
+
+            await _dataContext.SaveChangesAsync();
+        }
+
+        public async Task<List<UserWithAvatarModel>> GetSubscribsions(Guid userId)
+        {
+            var user = await GetUserById(userId);
+        
+            if (user == default)
+                throw new Exception("you are not autorized");
+
+            var subs = await _dataContext.Subs.Include(x => x.Target)
+                .Where(x => x.SubscriberId == userId).ToListAsync();
+
+            var users = new List<UserWithAvatarModel>();
+
+            foreach (var sub in subs)
+            {
+                users.Add(_mapper.Map<UserWithAvatarModel>(sub.Target));
+            }
+
+            return users;
         }
 
         public void Dispose() => _dataContext.Dispose();

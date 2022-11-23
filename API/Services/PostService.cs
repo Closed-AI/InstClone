@@ -47,6 +47,38 @@ namespace API.Services
             await _dataContext.SaveChangesAsync();
         }
 
+        public async Task LikePost(Guid postId, Guid userId)
+        {
+            var user = await _dataContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            var post = await _dataContext.Posts.FirstOrDefaultAsync(x => x.Id == postId);
+
+            if (post == null)
+                throw new Exception("Post does not exist");
+
+            if (user == null)
+                throw new Exception("Post does not exist");
+
+            var temp = await _dataContext.PostLikes.FirstOrDefaultAsync(x 
+                => x.PostId == postId && x.UserId == userId);
+
+            if (temp != default)
+            {
+                _dataContext.PostLikes.Remove(temp);
+            }
+            else
+            {
+                var like = new PostLike
+                {
+                    User = user,
+                    Comment = post
+                };
+
+                await _dataContext.PostLikes.AddAsync(like);
+            }
+
+            await _dataContext.SaveChangesAsync();
+        }
+
         public async Task WriteComment(CreateCommentModel model)
         {
             if (model.Text == null)
@@ -58,12 +90,53 @@ namespace API.Services
             await _dataContext.SaveChangesAsync();
         }
 
+        public async Task LikeComment(Guid commentId, Guid userId)
+        {
+            var user = await _dataContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            var comment = await _dataContext.Comments.FirstOrDefaultAsync(x => x.Id == commentId);
+
+            if (comment == null)
+                throw new Exception("Post does not exist");
+
+            if (user == null)
+                throw new Exception("Post does not exist");
+
+            var temp = await _dataContext.CommentLikes.FirstOrDefaultAsync(x
+                => x.CommentId == commentId && x.UserId == userId);
+
+            if (temp != default)
+            {
+                _dataContext.CommentLikes.Remove(temp);
+            }
+            else
+            {
+                var like = new CommentLike
+                {
+                    User = user,
+                    Comment = comment
+                };
+
+                await _dataContext.CommentLikes.AddAsync(like);
+            }
+
+            await _dataContext.SaveChangesAsync();
+        }
+
+        public async Task<List<CommentModel>> ShowPostComments(Guid postId)
+        {
+            var entitise = await _dataContext.Comments.Include(x => x.Likes)
+                .Where(x => x.PostId == postId).ToListAsync();
+
+            return _mapper.Map<List<CommentModel>>(entitise);
+        }
+
         public async Task<PostModel> GetPostById(Guid id)
         {
             var post = await _dataContext.Posts
                 .Include(x => x.Author).ThenInclude(x => x.Avatar)
                 .Include(x => x.PostContent).AsNoTracking().OrderByDescending(x => x.CreatingDate)
                 .Include(x => x.Comments).OrderByDescending(x => x.CreatingDate)
+                .Include(x => x.Likes)
                 .Where(x => x.Id == id)
                 .Select(x => _mapper.Map<PostModel>(x))
                 .FirstOrDefaultAsync();
@@ -79,7 +152,9 @@ namespace API.Services
             var posts = await _dataContext.Posts
                 .Include(x => x.Author).ThenInclude(x => x.Avatar)
                 .Include(x => x.PostContent).AsNoTracking().OrderByDescending(x => x.CreatingDate)
-                .Include(x => x.Comments).OrderByDescending(x => x.CreatingDate)
+                .Include(x => x.Comments).ThenInclude(x=>x.Likes)
+                .OrderByDescending(x => x.CreatingDate)
+                .Include(x => x.Likes)
                 .Skip(skip).Take(take)
                 .Select(x => _mapper.Map<PostModel>(x))
                 .ToListAsync();

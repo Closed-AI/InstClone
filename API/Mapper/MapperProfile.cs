@@ -17,12 +17,12 @@ namespace API.Mapper
                 ;
             CreateMap<User, UserModel>();
             CreateMap<User, UserWithAvatarModel>()
-                .ForMember(d => d.BirthDate, m => m.MapFrom(s => s.BirthDate))
                 .AfterMap<UserWithAvatarMapperAction>()
                 ;
 
             CreateMap<Post, PostModel>()
                 .ForMember(d => d.Contents, m => m.MapFrom(s => s.PostContent))
+                .ForMember(d => d.LikeCount, m => m.MapFrom(s => s.Likes != null ? s.Likes.Count : 0));
                 ;
             CreateMap<CreatePostModel, Post>()
                 .ForMember(d => d.PostContent, m => m.MapFrom(s => s.Contents))
@@ -30,7 +30,9 @@ namespace API.Mapper
                 ;
             CreateMap<CreatePostRequest, CreatePostModel>();
 
-            CreateMap<Comment, CommentModel>();
+            CreateMap<Comment, CommentModel>()
+                .ForMember(d => d.LikeCount, m => m.MapFrom(s => s.Likes != null ? s.Likes.Count : 0))
+                ;
             CreateMap<CreateCommentRequest, CreateCommentModel>();
             CreateMap<CreateCommentModel, Comment>()
                 .ForMember(d => d.CreatingDate, m => m.MapFrom(s => DateTime.UtcNow))
