@@ -1,5 +1,7 @@
 ﻿using API.Models;
 using API.Services;
+using Common.Consts;
+using Common.Extentions;
 using DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,13 +10,16 @@ namespace Api.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Api")]
     public class AttachController : ControllerBase
     {
-        private readonly AttachService _attachService;
+        private readonly PostService _postService;
+        private readonly UserService _userService;
 
-        public AttachController(AttachService attachService)
+        public AttachController(PostService postService, UserService userService)
         {
-            _attachService = attachService;
+            _postService = postService;
+            _userService = userService;
         }
 
         [HttpPost]
@@ -29,9 +34,24 @@ namespace Api.Controllers
             return res;
         }
 
+        [HttpGet]
+        [Route("{postContentId}")]
+        public async Task<FileStreamResult> GetPostContent(Guid postContentId, bool download = false)
+            => RenderAttach(await _postService.GetPostContent(postContentId), download);
+
+        [HttpGet]
+        [Route("{userId}")]
+        public async Task<FileStreamResult> GetUserAvatar(Guid userId, bool download = false)
+           => RenderAttach(await _userService.GetUserAvatar(userId), download);
+
+
+        [HttpGet]
+        public async Task<FileStreamResult> GetCurentUserAvatar(bool download = false)
+            => await GetUserAvatar(User.GetClaimValue<Guid>(ClaimNames.Id), download);
+
         private async Task<MetadataModel> UploadFile(IFormFile file)
         {
-            var tempPath = Path.GetTempPath();
+            var tempPath = Path.GetTempPath();                                     
             var meta = new MetadataModel
             {
                 TempId = Guid.NewGuid(),
@@ -39,9 +59,9 @@ namespace Api.Controllers
                 MimeType = file.ContentType,
                 Size = file.Length,
             };
-
+        
             var newPath = Path.Combine(tempPath, meta.TempId.ToString());
-
+        
             var fileinfo = new FileInfo(newPath);
             if (fileinfo.Exists)
             {
@@ -49,33 +69,24 @@ namespace Api.Controllers
             }
             else
             {
-                if (fileinfo.Directory == null)
-                {
-                    throw new Exception("temp is null");
-                }
-                else if (!fileinfo.Directory.Exists)
-                {
-                    fileinfo.Directory?.Create();
-                }
-
                 using (var stream = System.IO.File.Create(newPath))
                 {
                     await file.CopyToAsync(stream);
                 }
-
+        
                 return meta;
             }
         }
 
-        [HttpGet]
-        public async Task<FileResult> GetAttach(Guid id)
+        private FileStreamResult RenderAttach(AttachModel attach, bool download)
         {
-            var attach = await _attachService.GetAttach(id);
-            
-            if (attach == null)
-                throw new Exception("attach not found");
-            
-            return File(System.IO.File.ReadAllBytes(attach.FilePath), attach.MimeType);
+            var fs = new FileStream(attach.FilePath, FileMode.Open);
+            var ext = Path.GetExtension(attach.Name);
+
+            if (download)
+                return File(fs, attach.MimeType, $"{attach.Id}{ext}");
+            else
+                return File(fs, attach.MimeType);
         }
     }
 }

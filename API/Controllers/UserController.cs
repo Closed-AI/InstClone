@@ -1,5 +1,7 @@
-﻿using API.Models;
+﻿using Api.Controllers;
+using API.Models;
 using API.Services;
+using Common.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,26 +9,25 @@ namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Api")]
     public class UserController : ControllerBase
     {
         private readonly UserService _userService;
 
-        public UserController(UserService userService)
+        public UserController(UserService userService, LinkGeneratorService links)
         {
             _userService = userService;
-        }
 
-        [HttpPost]
-        public async Task CreateUser(CreateUserModel model)
-        {
-            if (await _userService.CheckUserExist(model.Email))
-                throw new Exception("user wtih cirrent email exist");
-            await _userService.CreateUser(model);
+            links.LinkAvatarGenerator = x =>
+            Url.ControllerAction<AttachController>(nameof(AttachController.GetUserAvatar), new
+            {
+                userId = x.Id,
+            });
         }
 
         [HttpGet]
         [Authorize]
-        public async Task<List<UserModel>> GetUsers() => await _userService.GetUsers();
+        public async Task<List<UserWithAvatarModel>> GetUsers() => await _userService.GetUsers();
 
         [HttpGet]
         [Authorize]
@@ -41,6 +42,10 @@ namespace API.Controllers
             else
                 throw new Exception("you are not authorized");
         }
+
+        [HttpGet]
+        public async Task<UserWithAvatarModel> GetUserById(Guid userId) 
+            => await _userService.GetUser(userId);
 
         [HttpPost]
         [Authorize]
@@ -69,31 +74,6 @@ namespace API.Controllers
             }
             else
                 throw new Exception("you are not authorized");
-        }
-
-        [HttpGet]
-        public async Task<FileResult> GetUserAvatar(Guid userId)
-        {
-            var attach = await _userService.GetUserAvatar(userId);
-
-            if (attach == null)
-                throw new Exception("user has no avatar");
-
-            return File(System.IO.File.ReadAllBytes(attach.FilePath), attach.MimeType);
-        }
-
-        [HttpGet]
-        public async Task<FileResult> DownloadAvatar(Guid userId)
-        {
-            var attach = await _userService.GetUserAvatar(userId);
-
-            HttpContext.Response.ContentType = attach.MimeType;
-            FileContentResult result = new FileContentResult(System.IO.File.ReadAllBytes(attach.FilePath), attach.MimeType)
-            {
-                FileDownloadName = attach.Name
-            };
-
-            return result;
         }
     }
 }

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20221109055018_addAuthorIdToAttach")]
-    partial class addAuthorIdToAttach
+    [Migration("20221123040330_refactoring")]
+    partial class refactoring
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -92,18 +92,18 @@ namespace API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("CreatingDate")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatorId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatorId");
+                    b.HasIndex("AuthorId");
 
                     b.ToTable("Posts");
                 });
@@ -219,13 +219,13 @@ namespace API.Migrations
 
             modelBuilder.Entity("DAL.Entities.Post", b =>
                 {
-                    b.HasOne("DAL.Entities.User", "Creator")
+                    b.HasOne("DAL.Entities.User", "Author")
                         .WithMany("Posts")
-                        .HasForeignKey("CreatorId")
+                        .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Creator");
+                    b.Navigation("Author");
                 });
 
             modelBuilder.Entity("DAL.Entities.UserSession", b =>

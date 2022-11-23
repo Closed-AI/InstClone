@@ -1,103 +1,72 @@
 ﻿using API.Models;
 using DAL.Entities;
 using DAL;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 
 namespace API.Services
 {
     public class PostService
     {
-        private readonly DAL.DataContext _dataContext;
-        private readonly UserService _userService;
+        private readonly IMapper _mapper;
+        private readonly DataContext _dataContext;
 
-        public PostService(DataContext dataContext, UserService userService)
+        public PostService(IMapper mapper, DataContext dataContext)
         {
+            _mapper = mapper;
             _dataContext = dataContext;
-            _userService = userService;
         }
 
-        public async Task CreatePost(Guid creatorId,CreatePostModel model)
+        public async Task CreatePost(CreatePostRequest request)
         {
-            var post = new Post
-            {
-                Id = Guid.NewGuid(),
-                Description = model.Description,
-                CreatingDate = DateTime.UtcNow,
-                CreatorId = creatorId
-            };
-            await _dataContext.Posts.AddAsync(post);
-            await _dataContext.SaveChangesAsync();
+            var model = _mapper.Map<CreatePostModel>(request);
 
-            if (model.Contents != null)
-                foreach (var el in model.Contents)
+            model.Contents?.ForEach(e =>
+            {
+                e.AuthorId = model.AuthorId;
+                e.FilePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "attaches",
+                    e.TempId.ToString());
+
+                var tempFI = new FileInfo(Path.Combine(Path.GetTempPath(), e.TempId.ToString()));
+
+                if (tempFI.Exists)
                 {
-                    await AddContentToPost(post, el);
+                    var destFI = new FileInfo(e.FilePath);
+
+                    if (destFI.Directory != null && !destFI.Directory.Exists)
+                        destFI.Directory.Create();
+
+                    File.Move(tempFI.FullName, e.FilePath, true);
                 }
+            });
+
+            var dbEntity = _mapper.Map<Post>(model);
+            await _dataContext.Posts.AddAsync(dbEntity);
+            await _dataContext.SaveChangesAsync();
         }
 
-        private async Task AddContentToPost(Post post, MetadataModel model)
+        public async Task WriteComment(CreateCommentModel model)
         {
-            var tempFi = new FileInfo(Path.Combine(Path.GetTempPath(), model.TempId.ToString()));
-
-            if (!tempFi.Exists)
-                throw new Exception("file not found");
-            else
-            {
-                var path = Path.Combine(Directory.GetCurrentDirectory(), "attaches", model.TempId.ToString());
-                var destFi = new FileInfo(path);
-
-                if (destFi.Directory != null && !destFi.Directory.Exists)
-                    destFi.Directory.Create();
-
-                System.IO.File.Copy(tempFi.FullName, path, true);
-
-                var user = await _userService.GetUserById(post.CreatorId);
-
-                var postContent = new PostContent
-                {
-                    PostId = post.Id,
-                    Post = post,
-                    Author = user,
-                    MimeType = model.MimeType,
-                    FilePath = path,
-                    Name = model.Name,
-                    Size = model.Size
-                };
-
-                if (post.PostContent == null)
-                    post.PostContent = new List<PostContent>();
-
-                post.PostContent.Add(postContent);
-                await _dataContext.SaveChangesAsync();
-            }
-        }
-
-        public async Task WriteComment(Guid userId, Guid postId, string text)
-        {
-            if (text == null)
+            if (model.Text == null)
                 throw new Exception("text of comment can not be empty");
 
-            var comment = new Comment
-            {
-                Id = Guid.NewGuid(),
-                PostId = postId,
-                AuthorId = userId,
-                Text = text,
-                CreatingDate = DateTimeOffset.UtcNow
-            };
+            var entity = _mapper.Map<Comment>(model);
 
-            await _dataContext.Comments.AddAsync(comment);
+            await _dataContext.Comments.AddAsync(entity);
             await _dataContext.SaveChangesAsync();
         }
 
-        public async Task<Post> GetPostById(Guid id)
+        public async Task<PostModel> GetPostById(Guid id)
         {
-            var post = await _dataContext
-                .Posts
-                .Include(e => e.PostContent)
-                .Include(e => e.Comments)
-                .FirstOrDefaultAsync(e => e.Id == id);
+            var post = await _dataContext.Posts
+                .Include(x => x.Author).ThenInclude(x => x.Avatar)
+                .Include(x => x.PostContent).AsNoTracking().OrderByDescending(x => x.CreatingDate)
+                .Include(x => x.Comments).OrderByDescending(x => x.CreatingDate)
+                .Where(x => x.Id == id)
+                .Select(x => _mapper.Map<PostModel>(x))
+                .FirstOrDefaultAsync();
 
             if (post == null)
                 throw new Exception("post not found");
@@ -105,14 +74,25 @@ namespace API.Services
             return post;
         }
 
-        public async Task<List<Post>> GetPosts(int skip, int take)
+        public async Task<List<PostModel>> GetPosts(int skip, int take)
         {
-            return await _dataContext
-                .Posts
-                .Include(e => e.PostContent)
-                .Take(take)
-                .Skip(skip)
+            var posts = await _dataContext.Posts
+                .Include(x => x.Author).ThenInclude(x => x.Avatar)
+                .Include(x => x.PostContent).AsNoTracking().OrderByDescending(x => x.CreatingDate)
+                .Include(x => x.Comments).OrderByDescending(x => x.CreatingDate)
+                .Skip(skip).Take(take)
+                .Select(x => _mapper.Map<PostModel>(x))
                 .ToListAsync();
+            
+            return posts;
+        }
+
+        public async Task<AttachModel> GetPostContent(Guid postContentId)
+        {
+            var content = await _dataContext.PostContents
+                .FirstOrDefaultAsync(x => x.Id == postContentId);
+
+            return _mapper.Map<AttachModel>(content);
         }
     }
 }

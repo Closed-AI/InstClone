@@ -1,5 +1,6 @@
-using API;
+using Api.Services;
 using API.Configs;
+using API.Mapper;
 using API.Middlewares;
 using API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,6 +37,7 @@ internal class Program
                 Scheme = JwtBearerDefaults.AuthenticationScheme,
 
             });
+
             o.AddSecurityRequirement(new OpenApiSecurityRequirement()
             {
                 {
@@ -54,6 +56,9 @@ internal class Program
                     new List<string>()
                 }
             });
+
+            o.SwaggerDoc("Auth", new OpenApiInfo { Title = "Auth" });
+            o.SwaggerDoc("Api", new OpenApiInfo { Title = "Api" });
         });
 
         // add data context as scoped service, connect with PostgreSQL with Npgsql package;
@@ -66,9 +71,10 @@ internal class Program
         // add automaper
         builder.Services.AddAutoMapper(typeof(MapperProfile).Assembly);
         // add our user service
-        builder.Services.AddScoped<UserService>();
+        builder.Services.AddScoped<AuthService>();
         builder.Services.AddScoped<PostService>();
-        builder.Services.AddTransient<AttachService>();
+        builder.Services.AddScoped<UserService>();
+        builder.Services.AddScoped<LinkGeneratorService>();
 
         builder.Services.AddAuthentication(o =>
         {
@@ -98,7 +104,6 @@ internal class Program
             });
         });
 
-
         // Application building (there starts old code style OnConfigure() method)
         var app = builder.Build();
 
@@ -115,19 +120,20 @@ internal class Program
             }
         }
 
-        // in "PROD")) version make this section working oly in (debug) mode
-        //                                                  [ development ]
-        // now we have no GUI and need to test our API from Swagger
+        //------------------------------------------------------------------
+        //if (app.Environment.IsDevelopment())
         app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("Api/swagger.json", "Api");
+            c.SwaggerEndpoint("Auth/swagger.json", "Auth");
+        });
         //------------------------------------------------------------------
 
         app.UseHttpsRedirection();
 
-        // authorization and autentification middleware
         app.UseAuthentication();
         app.UseAuthorization();
-
         app.UseTokenValidator();
         app.MapControllers();
 

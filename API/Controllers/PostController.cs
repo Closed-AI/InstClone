@@ -2,7 +2,9 @@
 using API.Models;
 using API.Services;
 using AutoMapper;
-using Common;
+using Common.Consts;
+using Common.Extensions;
+using Common.Extentions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,40 +12,59 @@ namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Api")]
     public class PostController : ControllerBase
     {
         private readonly PostService _postService;
         private readonly IMapper _mapper;
 
-        public PostController(PostService postService, IMapper mapper)
+        public PostController(PostService postService, IMapper mapper, LinkGeneratorService links)
         {
             _postService = postService;
             _mapper = mapper;
+
+            links.LinkContentGenerator = x => Url.ControllerAction<AttachController>
+            (
+                nameof(AttachController.GetPostContent), new
+                {
+                    postContentId = x.Id,
+                }
+            );
+            links.LinkAvatarGenerator = x => Url.ControllerAction<AttachController>
+            (
+                nameof(AttachController.GetUserAvatar), new
+                {
+                    userId = x.Id,
+                }
+            );
         }
 
         [HttpPost]
         [Authorize]
-        public async Task CreatePost(CreatePostModel model)
+        public async Task CreatePost(CreatePostRequest request)
         {
-            var userIdString = User.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
-
-            if (Guid.TryParse(userIdString, out var userId))
+            if (!request.AuthorId.HasValue)
             {
-                await _postService.CreatePost(userId, model);
+                var userId = User.GetClaimValue<Guid>(ClaimNames.Id);
+                if (userId == default)
+                    throw new Exception("not authorize");
+                request.AuthorId = userId;
             }
-            else
-                throw new Exception("you are not authorized");
+            await _postService.CreatePost(request);
         }
 
         [HttpPost]
         [Authorize]
-        public async Task WriteComment(WriteCommentRequestModel model)
+        public async Task WriteComment(CreateCommentRequest request)
         {
             var userIdString = User.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
 
             if (Guid.TryParse(userIdString, out var userId))
             {
-                await _postService.WriteComment(userId, model.PostId, model.Text);
+                var model = _mapper.Map<CreateCommentModel>(request);
+                model.AuthorId = userId;
+
+                await _postService.WriteComment(model);
             }
             else
                 throw new Exception("you are not authorized");
@@ -57,58 +78,11 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<PostModel> GetPost(Guid id)
-        {
-            var post = await _postService.GetPostById(id);
-
-            if (post == null)
-                throw new Exception("post not found");
-            
-            var res = _mapper.Map<PostModel>(post);
-
-            res.Contents = new List<AttachWithLinkModel>();
-
-            if (post.PostContent != null)
-                foreach (var item in post.PostContent)
-                {
-                    var link = Url.Action(
-                        nameof(AttachController.GetAttach),
-                        nameof(AttachController).CutController(),
-                        new { id = item.Id }
-                        );
-
-                    if (link != null)
-                    {
-                        var model = new AttachWithLinkModel
-                        {
-                            Name = item.Name,
-                            MimeType = item.MimeType,
-                            Link = link
-                        };
-
-                        res.Contents.Add(model);
-                    }
-                }
-
-            return res;
-        }
+        public async Task<PostModel> GetPostById(Guid id)
+            => await _postService.GetPostById(id);
 
         [HttpGet]
         public async Task<List<PostModel>> GetPosts(int skip = 0, int take = 10)
-        {
-            var posts = await _postService.GetPosts(skip, take);
-
-            if (posts == null)
-                return new List<PostModel>();
-
-            var postModels = new List<PostModel>();
-
-            foreach(var item in posts)
-            {
-                postModels.Add(await GetPost(item.Id));
-            }
-
-            return postModels;
-        }
+            => await _postService.GetPosts(skip, take);
     }
 }

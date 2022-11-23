@@ -1,7 +1,6 @@
 ﻿using API.Configs;
 using API.Models;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Common;
 using DAL;
 using DAL.Entities;
@@ -16,7 +15,7 @@ namespace API.Services
     public class UserService : IDisposable
     {
         private readonly IMapper _mapper;
-        private readonly DAL.DataContext _dataContext;
+        private readonly DataContext _dataContext;
         private readonly AuthConfig _config;
 
         public UserService(IMapper mapper, DataContext context, IOptions<AuthConfig> config)
@@ -50,11 +49,14 @@ namespace API.Services
             }
         }
 
-        public async Task<List<UserModel>> GetUsers()
-            => await _dataContext.Users.AsNoTracking()
-            .ProjectTo<UserModel>(_mapper.ConfigurationProvider).ToListAsync();
+        public async Task<List<UserWithAvatarModel>> GetUsers()
+            => await _dataContext.Users
+            .Include(x => x.Avatar)
+            .Include(x => x.Posts)
+            .Select(x => _mapper.Map<UserWithAvatarModel>(x))
+            .ToListAsync();
 
-        public async Task<DAL.Entities.User> GetUserById(Guid id)
+        public async Task<User> GetUserById(Guid id)
         {
             var user = await _dataContext.Users.Include(e => e.Avatar).FirstOrDefaultAsync(x => x.Id == id);
 
@@ -63,14 +65,14 @@ namespace API.Services
             return user;
         }
 
-        public async Task<UserModel> GetUser(Guid id)
+        public async Task<UserWithAvatarModel> GetUser(Guid id)
         {
             var user = await GetUserById(id);
 
-            return _mapper.Map<UserModel>(user);
+            return _mapper.Map<UserWithAvatarModel>(user);
         }
 
-        private async Task<DAL.Entities.User> GetUserByCredention(string login, string password)
+        private async Task<User> GetUserByCredention(string login, string password)
         {
             var user = await _dataContext
                 .Users
@@ -85,7 +87,7 @@ namespace API.Services
             return user;
         }
 
-        private TokenModel GenerateToken(DAL.Entities.UserSession session)
+        private TokenModel GenerateToken(UserSession session)
         {
             var dtNow = DateTime.Now;
 

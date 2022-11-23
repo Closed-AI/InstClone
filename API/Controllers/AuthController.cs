@@ -6,6 +6,7 @@ namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Auth")]
     public class AuthController : ControllerBase
     {
         private readonly UserService _userService;
@@ -22,5 +23,14 @@ namespace API.Controllers
         [HttpPost]
         public async Task<TokenModel> RefreshToken(RefreshTokenRequestModel model)
             => await _userService.GetTokenByRefreshToken(model.RefreshToken);
+
+        [HttpPost]
+        public async Task RegisterUser(CreateUserModel model)
+        {
+            if (await _userService.CheckUserExist(model.Email))
+                throw new Exception("user is exist");
+
+            await _userService.CreateUser(model);
+        }
     }
 }
