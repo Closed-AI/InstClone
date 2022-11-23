@@ -55,6 +55,15 @@ namespace API.Controllers
 
         [HttpPost]
         [Authorize]
+        public async Task DeletePost(Guid postId)
+        {
+            var userId = User.GetClaimValue<Guid>(ClaimNames.Id);
+
+            await _postService.DeletePost(postId, userId);
+        }
+
+        [HttpPost]
+        [Authorize]
         public async Task LikePost(Guid postId)
         {
             // лайк и отмена лайка производятся вызовом одного метода,

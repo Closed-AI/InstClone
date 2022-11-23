@@ -3,6 +3,7 @@ using DAL.Entities;
 using DAL;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
+using Common.Consts;
 
 namespace API.Services
 {
@@ -44,6 +45,21 @@ namespace API.Services
 
             var dbEntity = _mapper.Map<Post>(model);
             await _dataContext.Posts.AddAsync(dbEntity);
+            await _dataContext.SaveChangesAsync();
+        }
+
+        public async Task DeletePost(Guid postId, Guid userId)
+        {
+            var post = await _dataContext.Posts.FirstOrDefaultAsync();
+
+            if (post == default)
+                throw new Exception("Post not found");
+
+            if (userId != post.AuthorId)
+                throw new Exception("You cand delete not your post");
+
+            _dataContext.Posts.Remove(post);
+
             await _dataContext.SaveChangesAsync();
         }
 

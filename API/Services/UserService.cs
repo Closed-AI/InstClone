@@ -240,6 +240,9 @@ namespace API.Services
             if (targetUser == default)
                 throw new Exception("targetUser not found");
 
+            if (targetId == subId)
+                throw new Exception("you cant subscripe on yourself");
+
             var sub = await _dataContext.Subs.FirstOrDefaultAsync(x 
                 => x.TargetId == targetId && x.SubscriberId == subId);
 

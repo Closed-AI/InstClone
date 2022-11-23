@@ -1,7 +1,9 @@
 ﻿using Api.Controllers;
 using API.Models;
 using API.Services;
+using Common.Consts;
 using Common.Extentions;
+using DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,6 +25,18 @@ namespace API.Controllers
             {
                 userId = x.Id,
             });
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task DeleteUser(Guid userID)
+        {
+            var curUserId = User.GetClaimValue<Guid>(ClaimNames.Id);
+
+            if (userID != curUserId)
+                throw new Exception("you cant delete diffrent user");
+
+            await _userService.DeleteUser(userID);
         }
 
         [HttpGet]
@@ -75,8 +89,6 @@ namespace API.Controllers
             else
                 throw new Exception("you are not authorized");
         }
-
-
 
         [HttpPost]
         [Authorize]
