@@ -1,6 +1,7 @@
 ﻿using API.Models;
 using API.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace API.Controllers
 {
@@ -22,7 +23,7 @@ namespace API.Controllers
 
         [HttpPost]
         public async Task<TokenModel> RefreshToken(RefreshTokenRequestModel model)
-            => await _userService.GetTokenByRefreshToken(model.RefreshToken);
+                    => await _userService.GetTokenByRefreshToken(model.RefreshToken);
 
         [HttpPost]
         public async Task RegisterUser(CreateUserModel model)

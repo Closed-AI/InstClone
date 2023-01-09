@@ -14,7 +14,7 @@ namespace API.Services
         }
         public void FixContent(PostContent s, AttachWithLinkModel d)
         {
-            d.Link = LinkContentGenerator?.Invoke(s);
+            d.ContentLink = LinkContentGenerator?.Invoke(s);
         }
 
     }
