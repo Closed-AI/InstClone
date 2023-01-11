@@ -116,14 +116,27 @@ namespace API.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<List<CommentModel>> ShowPostComments(Guid postId)
             => await _postService.ShowPostComments(postId);
         
         [HttpGet]
+        [Authorize]
         public async Task<PostModel> GetPostById(Guid id)
             => await _postService.GetPostById(id);
 
         [HttpGet]
+        [Authorize]
+        public async Task<List<PostModel>> GetUserPosts(Guid userId, int skip = 0, int take = 10)
+            => await _postService.GetUserPosts(userId, skip, take);
+
+        [HttpGet]
+        [Authorize]
+        public async Task<List<PostModel>> GetLikedPosts(Guid userId, int skip = 0, int take = 10)
+            => await _postService.GetLikedPosts(userId, skip, take);
+
+        [HttpGet]
+        [Authorize]
         public async Task<List<PostModel>> GetPosts(int skip = 0, int take = 10)
             => await _postService.GetPosts(skip, take);
     }

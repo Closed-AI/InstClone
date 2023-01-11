@@ -4,6 +4,7 @@ using DAL;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using Common.Consts;
+using System.Linq;
 
 namespace API.Services
 {
@@ -169,12 +170,50 @@ namespace API.Services
                 .Include(x => x.Author).ThenInclude(x => x.Avatar)
                 .Include(x => x.PostContent).AsNoTracking().OrderByDescending(x => x.CreatingDate)
                 .Include(x => x.Comments).ThenInclude(x=>x.Likes)
-                .OrderByDescending(x => x.CreatingDate)
+                .OrderBy(x => x.CreatingDate)
                 .Include(x => x.Likes)
                 .Skip(skip).Take(take)
                 .Select(x => _mapper.Map<PostModel>(x))
                 .ToListAsync();
             
+            return posts;
+        }
+
+        public async Task<List<PostModel>> GetUserPosts(Guid userId, int skip, int take)
+        {
+            var posts = await _dataContext.Posts
+                .Where(x=>x.AuthorId == userId)
+                .Include(x => x.Author).ThenInclude(x => x.Avatar)
+                .Include(x => x.PostContent).AsNoTracking().OrderByDescending(x => x.CreatingDate)
+                .Include(x => x.Comments).ThenInclude(x => x.Likes)
+                .OrderBy(x => x.CreatingDate)
+                .Include(x => x.Likes)
+                .Skip(skip).Take(take)
+                .Select(x => _mapper.Map<PostModel>(x))
+                .ToListAsync();
+
+            return posts;
+        }
+
+        public async Task<List<PostModel>> GetLikedPosts(Guid userId, int skip, int take)
+        {
+            List<Guid> postsId = await _dataContext.PostLikes
+                .Where(x => x.UserId == userId)
+                .Select(x => x.PostId)
+                .ToListAsync();
+
+
+            var posts = await _dataContext.Posts.
+                Where(x => postsId.Contains(x.Id))
+                .Include(x => x.Author).ThenInclude(x => x.Avatar)
+                .Include(x => x.PostContent).AsNoTracking().OrderByDescending(x => x.CreatingDate)
+                .Include(x => x.Comments).ThenInclude(x => x.Likes)
+                .OrderBy(x => x.CreatingDate)
+                .Include(x => x.Likes)
+                .Skip(skip).Take(take)
+                .Select(x => _mapper.Map<PostModel>(x))
+                .ToListAsync();
+
             return posts;
         }
 
