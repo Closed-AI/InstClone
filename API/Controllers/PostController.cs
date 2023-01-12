@@ -5,6 +5,7 @@ using AutoMapper;
 using Common.Consts;
 using Common.Extensions;
 using Common.Extentions;
+using DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -99,6 +100,20 @@ namespace API.Controllers
 
         [HttpPost]
         [Authorize]
+        public async Task DeleteComment(Guid commentId)
+        {
+            var userId = User.GetClaimValue<Guid>(ClaimNames.Id);
+
+            await _postService.DeleteComment(commentId, userId);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<List<CommentModel>> GetPostComments(Guid postId) =>
+            await _postService.GetPostComments(postId);
+
+        [HttpPost]
+        [Authorize]
         public async Task LikeComment(Guid commentId)
         {
             // лайк и отмена лайка производятся вызовом одного метода,
@@ -115,11 +130,6 @@ namespace API.Controllers
                 throw new Exception("you are not authorized");
         }
 
-        [HttpGet]
-        [Authorize]
-        public async Task<List<CommentModel>> ShowPostComments(Guid postId)
-            => await _postService.ShowPostComments(postId);
-        
         [HttpGet]
         [Authorize]
         public async Task<PostModel> GetPostById(Guid id)

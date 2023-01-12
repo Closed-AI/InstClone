@@ -22,6 +22,7 @@ namespace API.Mapper
 
             CreateMap<Post, PostModel>()
                 .ForMember(d => d.Contents, m => m.MapFrom(s => s.PostContent))
+                .ForMember(d => d.CommentCount, m => m.MapFrom(s => s.Comments != null ? s.Comments.Count : 0))
                 .ForMember(d => d.LikeCount, m => m.MapFrom(s => s.Likes != null ? s.Likes.Count : 0));
                 ;
             CreateMap<CreatePostModel, Post>()

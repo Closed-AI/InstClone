@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using Common.Consts;
 using System.Linq;
+using Microsoft.Extensions.Hosting;
 
 namespace API.Services
 {
@@ -51,7 +52,7 @@ namespace API.Services
 
         public async Task DeletePost(Guid postId, Guid userId)
         {
-            var post = await _dataContext.Posts.FirstOrDefaultAsync();
+            var post = await _dataContext.Posts.FirstOrDefaultAsync(x => x.Id == postId);
 
             if (post == default)
                 throw new Exception("Post not found");
@@ -107,6 +108,30 @@ namespace API.Services
             await _dataContext.SaveChangesAsync();
         }
 
+        public async Task DeleteComment(Guid commentId, Guid userId)
+        {
+            var comment = await _dataContext.Comments
+                .FirstOrDefaultAsync(x => x.Id == commentId);
+
+            if (comment==default)
+                throw new Exception("Comment not found");
+
+            if (userId != comment.AuthorId)
+                throw new Exception("You cand delete not your post");
+
+            _dataContext.Comments.Remove(comment);
+
+            await _dataContext.SaveChangesAsync();
+        }
+
+        public async Task<List<CommentModel>> GetPostComments(Guid postId)
+        {
+            return await _dataContext.Comments
+                .Where(x => x.PostId == postId)
+                .Select(x=>_mapper.Map<CommentModel>(x))
+                .ToListAsync();
+        }
+
         public async Task LikeComment(Guid commentId, Guid userId)
         {
             var user = await _dataContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
@@ -137,14 +162,6 @@ namespace API.Services
             }
 
             await _dataContext.SaveChangesAsync();
-        }
-
-        public async Task<List<CommentModel>> ShowPostComments(Guid postId)
-        {
-            var entitise = await _dataContext.Comments.Include(x => x.Likes)
-                .Where(x => x.PostId == postId).ToListAsync();
-
-            return _mapper.Map<List<CommentModel>>(entitise);
         }
 
         public async Task<PostModel> GetPostById(Guid id)
