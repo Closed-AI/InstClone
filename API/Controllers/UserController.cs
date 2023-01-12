@@ -106,9 +106,19 @@ namespace API.Controllers
                 throw new Exception("you are not authorized");
         }
 
-        [HttpPost]
+        [HttpGet]
+        [Authorize]
+        public async Task<bool> IsSubscribed(Guid targetId, Guid subId)=>
+            await _userService.IsSubscribed(targetId, subId);
+
+        [HttpGet]
         [Authorize]
         public async Task<List<UserWithAvatarModel>> GetSubscribsions(Guid userId)
             => await _userService.GetSubscribsions(userId);
+
+        [HttpGet]
+        [Authorize]
+        public async Task<List<UserWithAvatarModel>> GetSubscribers(Guid userId)
+            => await _userService.GetSubscribers(userId);
     }
 }

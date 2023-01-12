@@ -262,21 +262,67 @@ namespace API.Services
             await _dataContext.SaveChangesAsync();
         }
 
+        public async Task<bool> IsSubscribed(Guid targetId, Guid subId)
+        {
+            var target = await _dataContext.Users.FirstOrDefaultAsync(x => x.Id == targetId);
+            var sub = await _dataContext.Users.FirstOrDefaultAsync(x => x.Id == subId);
+
+            if (target == null)
+                throw new Exception("target user not found");
+            if (sub == null)
+                throw new Exception("sub user not found");
+
+            var subsscribe_line = await _dataContext.Subs.FirstOrDefaultAsync(x
+                => x.TargetId ==targetId && x.SubscriberId == subId);
+
+            return subsscribe_line != null;
+        }
+
+        // на кого подписан пользователь
         public async Task<List<UserWithAvatarModel>> GetSubscribsions(Guid userId)
         {
             var user = await GetUserById(userId);
-        
+
             if (user == default)
                 throw new Exception("you are not autorized");
 
-            var subs = await _dataContext.Subs.Include(x => x.Target)
-                .Where(x => x.SubscriberId == userId).ToListAsync();
+            var subs = await _dataContext.Subs
+                .Include(x => x.Target)
+                .Include(x => x.Target.Avatar)
+                .Include(x => x.Target.Posts)
+                .Where(x => x.SubscriberId == userId)
+                .ToListAsync();
 
             var users = new List<UserWithAvatarModel>();
 
             foreach (var sub in subs)
             {
                 users.Add(_mapper.Map<UserWithAvatarModel>(sub.Target));
+            }
+
+            return users;
+        }
+
+        // кто подписан на пользователя
+        public async Task<List<UserWithAvatarModel>> GetSubscribers(Guid userId)
+        {
+            var user = await GetUserById(userId);
+
+            if (user == default)
+                throw new Exception("you are not autorized");
+
+            var subs = await _dataContext.Subs
+                .Include(x => x.Subscriber)
+                .Include(x => x.Subscriber.Avatar)
+                .Include(x => x.Subscriber.Posts)
+                .Where(x => x.TargetId == userId)
+                .ToListAsync();
+
+            var users = new List<UserWithAvatarModel>();
+
+            foreach (var sub in subs)
+            {
+                users.Add(_mapper.Map<UserWithAvatarModel>(sub.Subscriber));
             }
 
             return users;
